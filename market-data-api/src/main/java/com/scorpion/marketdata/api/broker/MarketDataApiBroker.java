@@ -2,6 +2,8 @@ package com.scorpion.marketdata.api.broker;
 
 import com.scorpion.marketdata.api.controller.MarketDataController;
 import com.scorpion.marketdata.api.dto.*;
+import com.scorpion.marketdata.core.dto.KafkaResponse;
+import com.scorpion.marketdata.core.dto.MarketDataResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MarketDataApiBroker {
     private static final Logger log = LoggerFactory.getLogger(MarketDataController.class);
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final ConcurrentHashMap<String, CompletableFuture<String>> pendingRequests = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CompletableFuture<Object>> pendingRequests = new ConcurrentHashMap<>();
 
     public MarketDataApiBroker(KafkaTemplate<String, Object> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
@@ -30,9 +32,9 @@ public class MarketDataApiBroker {
         return java.util.UUID.randomUUID().toString();
     }
 
-    public ResponseEntity<String> addMarketData(MarketDataDto request) {
+    public ResponseEntity<String> saveMarketData(MarketDataDto request) {
         String correlationId = generateCorrelationId();
-        CompletableFuture<String> future = new CompletableFuture<>();
+        CompletableFuture<Object> future = new CompletableFuture<>();
         pendingRequests.put(correlationId, future);
 
         log.error("Request Body: " + request.toString());
@@ -49,7 +51,7 @@ public class MarketDataApiBroker {
         kafkaTemplate.send(message);
 
         try {
-            String result = future.join();
+            String result = (String) future.join();
             log.warn("Sending market data update response");
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -59,9 +61,9 @@ public class MarketDataApiBroker {
         }
     }
 
-    public ResponseEntity<String> getMarketDataSpecific (String symbol, String source) {
+    public ResponseEntity<Object> getMarketDataSpecific (String symbol, String source) {
         String correlationId = generateCorrelationId();
-        CompletableFuture<String> future = new CompletableFuture<>();
+        CompletableFuture<Object> future = new CompletableFuture<>();
         pendingRequests.put(correlationId, future);
 
         GetSpecificRequest kafkaRequest = new GetSpecificRequest(correlationId, symbol, source);
@@ -76,7 +78,7 @@ public class MarketDataApiBroker {
         kafkaTemplate.send(message);
 
         try {
-            String result = future.join();
+            Object result = future.join();
             log.warn("Sending market data query specific response");
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -86,9 +88,9 @@ public class MarketDataApiBroker {
         }
     }
 
-    public ResponseEntity<String> getMarketDataConsolidated(String symbol) {
+    public ResponseEntity<Object> getMarketDataConsolidated(String symbol) {
         String correlationId = generateCorrelationId();
-        CompletableFuture<String> future = new CompletableFuture<>();
+        CompletableFuture<Object> future = new CompletableFuture<>();
         pendingRequests.put(correlationId, future);
 
         GetConsolidatedRequest kafkaRequest = new GetConsolidatedRequest(correlationId, symbol);
@@ -103,7 +105,7 @@ public class MarketDataApiBroker {
         kafkaTemplate.send(message);
 
         try {
-            String result = future.join();
+            Object result = future.join();
             log.warn("Sending market data query consolidated response");
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -113,9 +115,9 @@ public class MarketDataApiBroker {
         }
     }
 
-    public ResponseEntity<String> getMarketDataBatch(List<String> request) {
+    public ResponseEntity<Object> getMarketDataBatch(List<String> request) {
         String correlationId = generateCorrelationId();
-        CompletableFuture<String> future = new CompletableFuture<>();
+        CompletableFuture<Object> future = new CompletableFuture<>();
         pendingRequests.put(correlationId, future);
 
         GetConsolidatedBatchRequest kafkaRequest = new GetConsolidatedBatchRequest(correlationId, request);
@@ -130,7 +132,7 @@ public class MarketDataApiBroker {
         kafkaTemplate.send(message);
 
         try {
-            String result = future.join();
+            Object result = future.join();
             log.warn("Sending market data query consolidated batch response");
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -142,7 +144,7 @@ public class MarketDataApiBroker {
 
     public ResponseEntity<String> deleteMarketData(String symbol, String source) {
         String correlationId = generateCorrelationId();
-        CompletableFuture<String> future = new CompletableFuture<>();
+        CompletableFuture<Object> future = new CompletableFuture<>();
         pendingRequests.put(correlationId, future);
 
         DeleteRequest kafkaRequest = new DeleteRequest(correlationId, symbol, source);
@@ -157,7 +159,7 @@ public class MarketDataApiBroker {
         kafkaTemplate.send(message);
 
         try {
-            String result = future.join();
+            String result = (String) future.join();
             log.warn("Sending market data delete response");
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -168,12 +170,12 @@ public class MarketDataApiBroker {
     }
 
     @KafkaListener(topics = "market-data-response", groupId = "market-data-api")
-    public void handleCoreResponse(TempPair response) {
+    public void handleCoreResponse(KafkaResponse response) {
         String correlationId = response.getCorrelationId();
-        String data = response.getData();
+        Object data = response.getData();
 
         log.warn("Received market data response");
-        CompletableFuture<String> future = pendingRequests.get(correlationId);
+        CompletableFuture<Object> future = pendingRequests.get(correlationId);
 
         if (future != null) {
             log.warn("Completing future");

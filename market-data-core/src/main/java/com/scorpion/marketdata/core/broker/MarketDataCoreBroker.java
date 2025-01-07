@@ -1,10 +1,15 @@
 package com.scorpion.marketdata.core.broker;
 
 import com.scorpion.marketdata.api.dto.*;
+import com.scorpion.marketdata.core.dto.KafkaResponse;
+import com.scorpion.marketdata.core.dto.MarketDataResponseBody;
 import com.scorpion.marketdata.core.service.MarketDataService;
 import com.scorpion.marketdata.core.service.MarketDataServiceImpl;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 
 import org.slf4j.Logger;
@@ -28,11 +33,16 @@ public class MarketDataCoreBroker {
         String correlationId = request.getCorrelationId();
         MarketDataRequestBody marketDataRequestBody = request.getMarketData();
 
-        TempPair kafkaResponse = new TempPair(correlationId, marketDataRequestBody !=null ? "Update successful" : "Update failed");
+        KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.saveMarketData(marketDataRequestBody) ? "Update successful" : "Update failed");
 
         log.warn("Received market data update request");
 
-        kafkaTemplate.send("market-data-response", kafkaResponse);
+        Message<KafkaResponse> message = MessageBuilder
+                .withPayload(kafkaResponse)
+                .setHeader(KafkaHeaders.TOPIC, "market-data-response")
+                .build();
+
+        kafkaTemplate.send(message);
         log.warn("Processing market data update response");
     }
 
@@ -42,11 +52,16 @@ public class MarketDataCoreBroker {
         String symbol = request.getSymbol();
         String source = request.getSource();
 
-        TempPair kafkaResponse = new TempPair(correlationId, String.format("PROCESSED SPECIFIC DATA :: [symbol:%s, source:%s]", symbol, source));
+        KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.getMarketDataSpecific(symbol, source));
 
         log.warn("Received market data query specific request");
 
-        kafkaTemplate.send("market-data-response", kafkaResponse);
+        Message<KafkaResponse> message = MessageBuilder
+                .withPayload(kafkaResponse)
+                .setHeader(KafkaHeaders.TOPIC, "market-data-response")
+                .build();
+
+        kafkaTemplate.send(message);
         log.warn("Processing market data query specific response");
     }
 
@@ -55,11 +70,16 @@ public class MarketDataCoreBroker {
         String correlationId = request.getCorrelationId();
         String symbol = request.getSymbol();
 
-        TempPair kafkaResponse = new TempPair(correlationId, String.format("PROCESSED CONSOLIDATED DATA :: [symbol:%s]", symbol));
+        KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.getMarketDataConsolidated(symbol));
 
         log.warn("Received market data query consolidated request");
 
-        kafkaTemplate.send("market-data-response", kafkaResponse);
+        Message<KafkaResponse> message = MessageBuilder
+                .withPayload(kafkaResponse)
+                .setHeader(KafkaHeaders.TOPIC, "market-data-response")
+                .build();
+
+        kafkaTemplate.send(message);
         log.warn("Processing market data query consolidated response");
     }
 
@@ -68,15 +88,16 @@ public class MarketDataCoreBroker {
         String correlationId = request.getCorrelationId();
         List<String> symbols = request.getSymbol();
 
-        /*for (String symbol : symbols) {
-            log.warn("Processing symbol: " + symbol);
-        }*/
-
-        TempPair kafkaResponse = new TempPair(correlationId, String.format("PROCESSED BATCH DATA :: [symbols:(%s)]", String.join("/", symbols)));
+        KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.getMarketDataBatch(symbols));
 
         log.warn("Received market data query consolidated batch request");
 
-        kafkaTemplate.send("market-data-response", kafkaResponse);
+        Message<KafkaResponse> message = MessageBuilder
+                .withPayload(kafkaResponse)
+                .setHeader(KafkaHeaders.TOPIC, "market-data-response")
+                .build();
+
+        kafkaTemplate.send(message);
         log.warn("Processing market data query consolidated batch response");
     }
 
@@ -86,11 +107,16 @@ public class MarketDataCoreBroker {
         String symbol = request.getSymbol();
         String source = request.getSource();
 
-        TempPair kafkaResponse = new TempPair(correlationId, (symbol!=null && source!=null) ? "Delete successful" : "Delete failed");
+        KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.deleteMarketData(symbol, source) ? "Delete successful" : "Delete failed");
 
         log.warn("Received market data delete request");
 
-        kafkaTemplate.send("market-data-response", kafkaResponse);
+        Message<KafkaResponse> message = MessageBuilder
+                .withPayload(kafkaResponse)
+                .setHeader(KafkaHeaders.TOPIC, "market-data-response")
+                .build();
+
+        kafkaTemplate.send(message);
         log.warn("Processing market data delete response");
     }
 }

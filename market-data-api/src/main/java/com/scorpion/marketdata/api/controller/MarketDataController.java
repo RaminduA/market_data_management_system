@@ -21,8 +21,8 @@ public class MarketDataController {
     }
 
     @PostMapping
-    public ResponseEntity<String> addMarketData(@RequestBody MarketDataDto request) {
-        ResponseEntity<String> response = marketDataApiBroker.addMarketData(request);
+    public ResponseEntity<String> saveMarketData(@RequestBody MarketDataDto request) {
+        ResponseEntity<String> response = marketDataApiBroker.saveMarketData(request);
 
         if (response != null) {
             return response;
@@ -32,8 +32,8 @@ public class MarketDataController {
     }
 
     @GetMapping("/source")
-    public ResponseEntity<String> getMarketDataSpecific(@RequestParam String symbol, @RequestParam String source) {
-        ResponseEntity<String> response = marketDataApiBroker.getMarketDataSpecific(symbol, source);
+    public ResponseEntity<Object> getMarketDataSpecific(@RequestParam String symbol, @RequestParam String source) {
+        ResponseEntity<Object> response = marketDataApiBroker.getMarketDataSpecific(symbol, source);
 
         if (response != null) {
             return response;
@@ -43,8 +43,8 @@ public class MarketDataController {
     }
 
     @GetMapping("/consolidated/{symbol}")
-    public ResponseEntity<String> getMarketDataConsolidated(@PathVariable String symbol) {
-        ResponseEntity<String> response = marketDataApiBroker.getMarketDataConsolidated(symbol);
+    public ResponseEntity<Object> getMarketDataConsolidated(@PathVariable String symbol) {
+        ResponseEntity<Object> response = marketDataApiBroker.getMarketDataConsolidated(symbol);
 
         if (response != null) {
             return response;
@@ -54,8 +54,8 @@ public class MarketDataController {
     }
 
     @GetMapping("/batch")
-    public ResponseEntity<String> getMarketDataBatch(@RequestBody List<String> request) {
-        ResponseEntity<String> response = marketDataApiBroker.getMarketDataBatch(request);
+    public ResponseEntity<Object> getMarketDataBatch(@RequestBody List<String> request) {
+        ResponseEntity<Object> response = marketDataApiBroker.getMarketDataBatch(request);
 
         if (response != null) {
             return response;

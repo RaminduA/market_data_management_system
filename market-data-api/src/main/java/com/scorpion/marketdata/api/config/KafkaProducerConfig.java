@@ -16,14 +16,13 @@ import java.util.Map;
 @Configuration
 public class KafkaProducerConfig {
 
-    @Value("${spring.kafka.bootstrap-servers}")
-    private String bootstrapServers;
+//    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers = "localhost:9092";
 
     public Map<String, Object> producerConfigs() {
         return Map.of(
                 ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers,
                 ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
-//                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class
                 ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class
         );
     }
