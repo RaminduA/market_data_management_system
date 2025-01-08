@@ -15,7 +15,7 @@ public class MarketData {
     private Double bidPrice;
     private Double midPrice;
     private Double askPrice;
-    private Long marketTimestamp;
+    private String marketTimestamp;
     private String dependsOnSymbol;
     private String source;
     private LocalDate lastCouponDate;
@@ -40,7 +40,7 @@ public class MarketData {
         this.theoreticalPrice = null;
     }
 
-    public MarketData(String symbol, Double lastTradedPrice, Double bidPrice, Double midPrice, Double askPrice, Long marketTimestamp, String dependsOnSymbol, String source, LocalDate lastCouponDate, Double interestRate, Double volatility, Double accruedInterest, Double theoreticalPrice) {
+    public MarketData(String symbol, Double lastTradedPrice, Double bidPrice, Double midPrice, Double askPrice, String marketTimestamp, String dependsOnSymbol, String source, LocalDate lastCouponDate, Double interestRate, Double volatility, Double accruedInterest, Double theoreticalPrice) {
         this.symbol = symbol;
         this.lastTradedPrice = lastTradedPrice;
         this.bidPrice = bidPrice;
@@ -103,11 +103,11 @@ public class MarketData {
         this.askPrice = askPrice;
     }
 
-    public Long getMarketTimestamp() {
+    public String getMarketTimestamp() {
         return marketTimestamp;
     }
 
-    public void setMarketTimestamp(Long marketTimestamp) {
+    public void setMarketTimestamp(String marketTimestamp) {
         this.marketTimestamp = marketTimestamp;
     }
 

@@ -1,7 +1,5 @@
 package com.scorpion.marketdata.core.dto;
 
-import java.time.LocalDate;
-
 public class MarketDataResponseBody {
     private final String symbol;
     private final Double lastTradedPrice;

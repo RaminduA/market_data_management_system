@@ -1,9 +1,7 @@
 package com.scorpion.marketdata.api.config;
 
-import com.scorpion.marketdata.api.dto.TempPair;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -15,11 +13,8 @@ import java.util.Map;
 
 @Configuration
 public class KafkaProducerConfig {
-
-//    @Value("${spring.kafka.bootstrap-servers}")
-    private String bootstrapServers = "localhost:9092";
-
     public Map<String, Object> producerConfigs() {
+        String bootstrapServers = "localhost:9092";
         return Map.of(
                 ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers,
                 ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,

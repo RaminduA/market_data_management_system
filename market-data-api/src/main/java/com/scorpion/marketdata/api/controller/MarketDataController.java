@@ -21,8 +21,8 @@ public class MarketDataController {
     }
 
     @PostMapping
-    public ResponseEntity<String> saveMarketData(@RequestBody MarketDataDto request) {
-        ResponseEntity<String> response = marketDataApiBroker.saveMarketData(request);
+    public ResponseEntity<Object> saveMarketData(@RequestBody MarketDataRequestBody request) {
+        ResponseEntity<Object> response = marketDataApiBroker.saveMarketData(request);
 
         if (response != null) {
             return response;
@@ -65,8 +65,8 @@ public class MarketDataController {
     }
 
     @DeleteMapping("/{symbol}/{source}")
-    public ResponseEntity<String> deleteMarketData(@PathVariable String symbol, @PathVariable String source) {
-        ResponseEntity<String> response = marketDataApiBroker.deleteMarketData(symbol, source);
+    public ResponseEntity<Object> deleteMarketData(@PathVariable String symbol, @PathVariable String source) {
+        ResponseEntity<Object> response = marketDataApiBroker.deleteMarketData(symbol, source);
 
         if (response != null) {
             return response;

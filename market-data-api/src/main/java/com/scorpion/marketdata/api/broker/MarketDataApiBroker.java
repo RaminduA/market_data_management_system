@@ -1,11 +1,12 @@
 package com.scorpion.marketdata.api.broker;
 
-import com.scorpion.marketdata.api.controller.MarketDataController;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.scorpion.marketdata.api.dto.*;
 import com.scorpion.marketdata.core.dto.KafkaResponse;
-import com.scorpion.marketdata.core.dto.MarketDataResponseBody;
+import com.scorpion.marketdata.core.dto.TransactionStatusDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -20,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class MarketDataApiBroker {
-    private static final Logger log = LoggerFactory.getLogger(MarketDataController.class);
+    private static final Logger log = LoggerFactory.getLogger(MarketDataApiBroker.class);
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ConcurrentHashMap<String, CompletableFuture<Object>> pendingRequests = new ConcurrentHashMap<>();
 
@@ -32,12 +33,12 @@ public class MarketDataApiBroker {
         return java.util.UUID.randomUUID().toString();
     }
 
-    public ResponseEntity<String> saveMarketData(MarketDataDto request) {
+    public ResponseEntity<Object> saveMarketData(MarketDataRequestBody request) {
         String correlationId = generateCorrelationId();
         CompletableFuture<Object> future = new CompletableFuture<>();
         pendingRequests.put(correlationId, future);
 
-        log.error("Request Body: " + request.toString());
+        log.error("Request Body: {}", request.toString());
 
         UpdateRequest kafkaRequest = new UpdateRequest(correlationId, request);
 
@@ -51,11 +52,19 @@ public class MarketDataApiBroker {
         kafkaTemplate.send(message);
 
         try {
-            String result = (String) future.join();
             log.warn("Sending market data update response");
-            return ResponseEntity.ok(result);
+
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonResult = mapper.writeValueAsString(future.join());
+            TransactionStatusDto result = mapper.readValue(jsonResult, TransactionStatusDto.class);
+
+            if (result.getStatus()) {
+                return ResponseEntity.status(HttpStatus.CREATED).body(result.getMessage());
+            } else {
+                return ResponseEntity.badRequest().body(result.getMessage());
+            }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error updating market data.");
+            return ResponseEntity.internalServerError().body("Error in Kafka.");
         } finally {
             pendingRequests.remove(correlationId);
         }
@@ -80,9 +89,14 @@ public class MarketDataApiBroker {
         try {
             Object result = future.join();
             log.warn("Sending market data query specific response");
-            return ResponseEntity.ok(result);
+
+            if (result != null) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Market data not found.");
+            }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error fetching market data.");
+            return ResponseEntity.internalServerError().body("Error in Kafka.");
         } finally {
             pendingRequests.remove(correlationId);
         }
@@ -107,9 +121,14 @@ public class MarketDataApiBroker {
         try {
             Object result = future.join();
             log.warn("Sending market data query consolidated response");
-            return ResponseEntity.ok(result);
+
+            if (result != null) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Market data not found.");
+            }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error fetching consolidated market data.");
+            return ResponseEntity.internalServerError().body("Error in Kafka.");
         } finally {
             pendingRequests.remove(correlationId);
         }
@@ -134,15 +153,20 @@ public class MarketDataApiBroker {
         try {
             Object result = future.join();
             log.warn("Sending market data query consolidated batch response");
-            return ResponseEntity.ok(result);
+
+            if (result != null) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Market data not found.");
+            }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error fetching consolidated market data batch.");
+            return ResponseEntity.internalServerError().body("Error in Kafka.");
         } finally {
             pendingRequests.remove(correlationId);
         }
     }
 
-    public ResponseEntity<String> deleteMarketData(String symbol, String source) {
+    public ResponseEntity<Object> deleteMarketData(String symbol, String source) {
         String correlationId = generateCorrelationId();
         CompletableFuture<Object> future = new CompletableFuture<>();
         pendingRequests.put(correlationId, future);
@@ -159,11 +183,19 @@ public class MarketDataApiBroker {
         kafkaTemplate.send(message);
 
         try {
-            String result = (String) future.join();
             log.warn("Sending market data delete response");
-            return ResponseEntity.ok(result);
+
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonResult = mapper.writeValueAsString(future.join());
+            TransactionStatusDto result = mapper.readValue(jsonResult, TransactionStatusDto.class);
+
+            if (result.getStatus()) {
+                return ResponseEntity.status(HttpStatus.ACCEPTED).body(result.getMessage());
+            } else {
+                return ResponseEntity.badRequest().body(result.getMessage());
+            }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error deleting market data.");
+            return ResponseEntity.internalServerError().body("Error in Kafka.");
         } finally {
             pendingRequests.remove(correlationId);
         }
@@ -179,6 +211,7 @@ public class MarketDataApiBroker {
 
         if (future != null) {
             log.warn("Completing future");
+            log.error("Data: {}", data);
             future.complete(data);
         }
     }

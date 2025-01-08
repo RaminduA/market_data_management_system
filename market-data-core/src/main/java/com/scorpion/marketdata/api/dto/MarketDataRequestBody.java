@@ -8,7 +8,7 @@ public class MarketDataRequestBody {
     private final Double bidPrice;
     private final Double midPrice;
     private final Double askPrice;
-    private final Long marketTimestamp;
+    private final String marketTimestamp;
     private final String dependsOnSymbol;
     private final String source;
     private final LocalDate lastCouponDate;
@@ -29,7 +29,7 @@ public class MarketDataRequestBody {
         this.volatility = null;
     }
 
-    public MarketDataRequestBody(String symbol, Double lastTradedPrice, Double bidPrice, Double midPrice, Double askPrice, Long marketTimestamp, String dependsOnSymbol, String source, LocalDate lastCouponDate, Double interestRate, Double volatility) {
+    public MarketDataRequestBody(String symbol, Double lastTradedPrice, Double bidPrice, Double midPrice, Double askPrice, String marketTimestamp, String dependsOnSymbol, String source, LocalDate lastCouponDate, Double interestRate, Double volatility) {
         this.symbol = symbol;
         this.lastTradedPrice = lastTradedPrice;
         this.bidPrice = bidPrice;
@@ -63,7 +63,7 @@ public class MarketDataRequestBody {
         return askPrice;
     }
 
-    public Long getMarketTimestamp() {
+    public String getMarketTimestamp() {
         return marketTimestamp;
     }
 
@@ -89,17 +89,17 @@ public class MarketDataRequestBody {
 
     public String toString() {
         return "MarketData{" + '\n' +
-                "symbol='" + symbol + '\'' + '\n' +
-                ", lastTradedPrice=" + lastTradedPrice + '\n' +
-                ", bidPrice=" + bidPrice + '\n' +
-                ", midPrice=" + midPrice + '\n' +
-                ", askPrice=" + askPrice + '\n' +
-                ", marketTimestamp=" + marketTimestamp + '\n' +
-                ", dependsOnSymbol='" + dependsOnSymbol + '\'' + '\n' +
-                ", source='" + source + '\'' + '\n' +
-                ", lastCouponDate=" + lastCouponDate + '\n' +
-                ", interestRate=" + interestRate + '\n' +
-                ", volatility=" + volatility + '\n' +
+                "symbol='" + symbol + '\'' + ", " +  '\n' +
+                "lastTradedPrice=" + lastTradedPrice + ", " +  '\n' +
+                "bidPrice=" + bidPrice + ", " +  '\n' +
+                "midPrice=" + midPrice + ", " +  '\n' +
+                "askPrice=" + askPrice + ", " +  '\n' +
+                "marketTimestamp=" + marketTimestamp + ", " +  '\n' +
+                "dependsOnSymbol='" + dependsOnSymbol + '\'' + ", " +  '\n' +
+                "source='" + source + '\'' + ", " +  '\n' +
+                "lastCouponDate=" + lastCouponDate + ", " + '\n' +
+                "interestRate=" + interestRate + ", " +  '\n' +
+                "volatility=" + volatility + '\n' +
                 '}';
     }
 

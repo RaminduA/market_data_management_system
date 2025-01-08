@@ -2,9 +2,14 @@ package com.scorpion.marketdata.core.service;
 
 import com.scorpion.marketdata.api.dto.MarketDataRequestBody;
 import com.scorpion.marketdata.core.dto.MarketDataResponseBody;
+import com.scorpion.marketdata.core.dto.TransactionStatusDto;
 import com.scorpion.marketdata.core.entity.MarketData;
 import com.scorpion.marketdata.core.repository.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -14,51 +19,81 @@ import java.util.List;
 
 @Service
 public class MarketDataServiceImpl implements MarketDataService {
+    private final PlatformTransactionManager transactionManager;
     private final MarketDataRepository marketDataRepository;
 
-    public MarketDataServiceImpl(MarketDataRepository marketDataRepository) {
+    public MarketDataServiceImpl(MarketDataRepository marketDataRepository, PlatformTransactionManager transactionManager) {
         this.marketDataRepository = marketDataRepository;
+        this.transactionManager = transactionManager;
     }
 
     @Override
-    public boolean saveMarketData(MarketDataRequestBody marketData) {
+    public TransactionStatusDto saveMarketData(MarketDataRequestBody marketData) {
         if (marketData == null) {
-            return false;
+            return new TransactionStatusDto(false, "Invalid market data.");
         }
 
-        boolean marketDataExists = marketDataRepository.existsBySymbolAndSource(marketData.getSymbol(), marketData.getSource());
+        DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        TransactionStatus status = transactionManager.getTransaction(def);
 
-        if (!marketDataExists) {
-            boolean isMarketDataInserted = insertMarketData(marketData);
+        try {
+            boolean marketDataExists = marketDataRepository.existsBySymbolAndSource(marketData.getSymbol(), marketData.getSource());
 
-            if (isMarketDataInserted) {
+            if (!marketDataExists) {
+                TransactionStatusDto insertMarketDataStatus = insertMarketData(marketData);
+
+                if (!insertMarketDataStatus.getStatus()) {
+                    transactionManager.rollback(status);
+                    return insertMarketDataStatus;
+                }
+
                 boolean consolidatedMarketDataExists = marketDataRepository.existsBySymbolAndSource(marketData.getSymbol(), "CONSOLIDATED");
 
                 if (!consolidatedMarketDataExists) {
-                    return insertConsolidatedMarketData(marketData);
+                    TransactionStatusDto insertConsolidatedMarketDataStatus = insertConsolidatedMarketData(marketData);
+
+                    if (!insertConsolidatedMarketDataStatus.getStatus()) {
+                        transactionManager.rollback(status);
+                        return insertConsolidatedMarketDataStatus;
+                    }
+
                 } else {
-                    return false;
+                    TransactionStatusDto updateConsolidatedMarketDataStatus = updateConsolidatedMarketData(marketData);
+
+                    if (!updateConsolidatedMarketDataStatus.getStatus()) {
+                        transactionManager.rollback(status);
+                        return updateConsolidatedMarketDataStatus;
+                    }
                 }
 
             } else {
-                return false;
-            }
+                TransactionStatusDto updateMarketDataStatus = updateMarketData(marketData);
 
-        } else {
-            boolean isMarketDataUpdated = updateMarketData(marketData);
+                if (!updateMarketDataStatus.getStatus()) {
+                    transactionManager.rollback(status);
+                    return updateMarketDataStatus;
+                }
 
-            if (isMarketDataUpdated) {
                 boolean consolidatedMarketDataExists = marketDataRepository.existsBySymbolAndSource(marketData.getSymbol(), "CONSOLIDATED");
 
                 if (!consolidatedMarketDataExists) {
-                    return false;
-                } else {
-                     return updateConsolidatedMarketData(marketData);
-                }
+                    TransactionStatusDto updateConsolidatedMarketDataStatus = updateConsolidatedMarketData(marketData);
 
-            } else {
-                return false;
+                    if (!updateConsolidatedMarketDataStatus.getStatus()) {
+                        transactionManager.rollback(status);
+                        return updateConsolidatedMarketDataStatus;
+                    }
+                }
             }
+
+            // Commit transaction if all operations succeed
+            transactionManager.commit(status);
+            return new TransactionStatusDto(true, "Market data saved successfully.");
+
+        } catch (Exception e) {
+            transactionManager.rollback(status);
+            return new TransactionStatusDto(false, "Error saving market data.");
         }
     }
 
@@ -162,57 +197,77 @@ public class MarketDataServiceImpl implements MarketDataService {
     }
 
     @Override
-    public boolean deleteMarketData(String symbol, String source) {
+    public TransactionStatusDto deleteMarketData(String symbol, String source) {
         if (symbol == null || source == null) {
-            return false;
+            return new TransactionStatusDto(false, "Invalid symbol or source.");
         }
 
-        boolean marketDataExists = marketDataRepository.existsBySymbolAndSource(symbol, source);
+        DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        TransactionStatus status = transactionManager.getTransaction(def);
 
-        if (marketDataExists) {
-            boolean marketDataDeleted = deleteMarketDataRecord(symbol, source);
-
-            if (marketDataDeleted) {
-                boolean noMarketDataExists = marketDataRepository.findAllBySymbolAndSourceIsNotIn(symbol, Collections.singletonList("CONSOLIDATED")).isEmpty();
-
-                if (noMarketDataExists) {
-                    boolean consolidatedMarketDataExists = marketDataRepository.existsBySymbolAndSource(symbol, "CONSOLIDATED");
-
-                    if (consolidatedMarketDataExists) {
-                        boolean consolidatedMarketDataDeleted = deleteConsolidatedMarketData(symbol);
-
-                        if (consolidatedMarketDataDeleted) {
-                            boolean dependantMarketDataExists = marketDataRepository.existsByDependsOnSymbol(symbol);
-
-                            if (dependantMarketDataExists) {
-                                return updateDependantMarketData(symbol);
-                            } else {
-                                return true;
-                            }
-
-                        } else {
-                            return false;
-                        }
-
-                    } else {
-                        return false;
-                    }
-
-                } else {
-                    return reConsolidateMarketData(symbol);
-                }
-
-            } else {
-                return false;
+        try {
+            // Check if market data exists
+            if (!marketDataRepository.existsBySymbolAndSource(symbol, source)) {
+                transactionManager.rollback(status);
+                return new TransactionStatusDto(false, "Market data does not exist.");
             }
 
-        } else {
-            return false;
-        }
+            // Delete market data
+            TransactionStatusDto deleteMarketDataStatus = deleteMarketDataRecord(symbol, source);
 
+            if (!deleteMarketDataStatus.getStatus()) {
+                transactionManager.rollback(status);
+                return deleteMarketDataStatus;
+            }
+
+            // Check if no other market data exists except "CONSOLIDATED"
+            boolean noMarketDataExists = marketDataRepository
+                    .findAllBySymbolAndSourceIsNotIn(symbol, Collections.singletonList("CONSOLIDATED"))
+                    .isEmpty();
+
+            if (noMarketDataExists) {
+                // Check if "CONSOLIDATED" market data exists
+                if (marketDataRepository.existsBySymbolAndSource(symbol, "CONSOLIDATED")) {
+                    // Delete "CONSOLIDATED" market data
+                    TransactionStatusDto deleteConsolidatedMarketDataStatus = deleteConsolidatedMarketData(symbol);
+
+                    if (!deleteConsolidatedMarketDataStatus.getStatus()) {
+                        transactionManager.rollback(status);
+                        return deleteConsolidatedMarketDataStatus;
+                    }
+
+                    // Check if dependent market data exists
+                    if (marketDataRepository.existsByDependsOnSymbol(symbol)) {
+                        TransactionStatusDto updateDependantMarketDataStatus = updateDependantMarketData(symbol);
+
+                        if (!updateDependantMarketDataStatus.getStatus()) {
+                            transactionManager.rollback(status);
+                            return updateDependantMarketDataStatus;
+                        }
+                    }
+                }
+            } else {
+                // Re-consolidate market data if other market data exists
+                TransactionStatusDto reConsolidateMarketDataStatus = reConsolidateMarketData(symbol);
+
+                if (!reConsolidateMarketDataStatus.getStatus()) {
+                    transactionManager.rollback(status);
+                    return reConsolidateMarketDataStatus;
+                }
+            }
+
+            // Commit transaction if all operations succeed
+            transactionManager.commit(status);
+            return new TransactionStatusDto(true, "Market data deleted successfully.");
+
+        } catch (Exception e) {
+            transactionManager.rollback(status);
+            return new TransactionStatusDto(false, "Error deleting market data.");
+        }
     }
 
-    private boolean insertMarketData(MarketDataRequestBody marketData) {
+    private TransactionStatusDto insertMarketData(MarketDataRequestBody marketData) {
         double accruedInterest = calculateAccruedInterest(marketData.getLastTradedPrice(), marketData.getInterestRate(), marketData.getLastCouponDate());
         double theoreticalPrice = calculateTheoreticalPrice(marketData.getDependsOnSymbol(), marketData.getVolatility());
 
@@ -234,10 +289,11 @@ public class MarketDataServiceImpl implements MarketDataService {
 
         MarketData savedMarketData = marketDataRepository.findBySymbolAndSource(marketData.getSymbol(), marketData.getSource());
 
-        return savedMarketData != null;
+        boolean isMarketDataInserted = savedMarketData != null;
+        return new TransactionStatusDto(isMarketDataInserted, isMarketDataInserted ? "Market data inserted successfully." : "Failed to insert market data.");
     }
 
-    private boolean updateMarketData(MarketDataRequestBody marketData) {
+    private TransactionStatusDto updateMarketData(MarketDataRequestBody marketData) {
         MarketData existingMarketData = marketDataRepository.findBySymbolAndSource(marketData.getSymbol(), marketData.getSource());
 
         if (marketData.getLastTradedPrice() != null) {
@@ -286,10 +342,11 @@ public class MarketDataServiceImpl implements MarketDataService {
 
         MarketData savedMarketData = marketDataRepository.findBySymbolAndSource(marketData.getSymbol(), marketData.getSource());
 
-        return savedMarketData != null;
+        boolean isMarketDataUpdated = savedMarketData != null;
+        return new TransactionStatusDto(isMarketDataUpdated, isMarketDataUpdated ? "Market data updated successfully." : "Failed to update market data.");
     }
 
-    private boolean insertConsolidatedMarketData(MarketDataRequestBody marketData) {
+    private TransactionStatusDto insertConsolidatedMarketData(MarketDataRequestBody marketData) {
         marketDataRepository.save(new MarketData(
                 marketData.getSymbol(),
                 marketData.getLastTradedPrice(),
@@ -308,10 +365,11 @@ public class MarketDataServiceImpl implements MarketDataService {
 
         MarketData savedConsolidatedMarketData = marketDataRepository.findBySymbolAndSource(marketData.getSymbol(), "CONSOLIDATED");
 
-        return savedConsolidatedMarketData != null;
+        boolean isMarketDataInserted = savedConsolidatedMarketData != null;
+        return new TransactionStatusDto(isMarketDataInserted, isMarketDataInserted ? "Consolidated market data inserted successfully." : "Failed to insert consolidated market data.");
     }
 
-    private boolean updateConsolidatedMarketData(MarketDataRequestBody marketData) {
+    private TransactionStatusDto updateConsolidatedMarketData(MarketDataRequestBody marketData) {
         MarketData existingConsolidatedMarketData = marketDataRepository.findBySymbolAndSource(marketData.getSymbol(), "CONSOLIDATED");
 
         if (marketData.getLastTradedPrice() != null) {
@@ -360,20 +418,21 @@ public class MarketDataServiceImpl implements MarketDataService {
 
         MarketData savedConsolidatedMarketData = marketDataRepository.findBySymbolAndSource(marketData.getSymbol(), "CONSOLIDATED");
 
-        return savedConsolidatedMarketData != null;
+        boolean isMarketDataUpdated = savedConsolidatedMarketData != null;
+        return new TransactionStatusDto(isMarketDataUpdated, isMarketDataUpdated ? "Consolidated market data updated successfully." : "Failed to update consolidated market data.");
     }
 
-    private boolean updateDependantMarketData(String symbol) {
+    private TransactionStatusDto updateDependantMarketData(String symbol) {
         boolean dependantMarketDataExists = marketDataRepository.existsByDependsOnSymbol(symbol);
 
         if (!dependantMarketDataExists) {
-            return false;
+            return new TransactionStatusDto(false, "No dependant market data found.");
         }
 
         List<MarketData> dependantMarketDataList = marketDataRepository.findAllByDependsOnSymbol(symbol);
 
         if (dependantMarketDataList == null || dependantMarketDataList.isEmpty()) {
-            return false;
+            return new TransactionStatusDto(false, "No dependant market data found.");
         }
 
         for (MarketData dependantMarketData : dependantMarketDataList) {
@@ -388,48 +447,50 @@ public class MarketDataServiceImpl implements MarketDataService {
             MarketData savedDependantMarketData = marketDataRepository.findBySymbolAndSource(dependantMarketData.getSymbol(), dependantMarketData.getSource());
 
             if (savedDependantMarketData.getDependsOnSymbol() != null) {
-                return false;
+                return new TransactionStatusDto(false, "Failed to update dependant market data.");
             }
         }
 
-        return true;
+        return new TransactionStatusDto(true, "Dependant market data updated successfully.");
     }
 
-    private boolean deleteMarketDataRecord(String symbol, String source) {
+    private TransactionStatusDto deleteMarketDataRecord(String symbol, String source) {
         boolean marketDataExists = marketDataRepository.existsBySymbolAndSource(symbol, source);
 
         if (!marketDataExists) {
-            return false;
+            return new TransactionStatusDto(false, "No market data found.");
         }
 
         marketDataRepository.deleteBySymbolAndSource(symbol, source);
 
-        return !marketDataRepository.existsBySymbolAndSource(symbol, source);
+        boolean isMarketDataDeleted = !marketDataRepository.existsBySymbolAndSource(symbol, source);
+        return new TransactionStatusDto(isMarketDataDeleted, isMarketDataDeleted ? "Market data deleted successfully." : "Failed to delete market data.");
     }
 
-    private boolean deleteConsolidatedMarketData(String symbol) {
+    private TransactionStatusDto deleteConsolidatedMarketData(String symbol) {
         boolean consolidatedMarketDataExists = marketDataRepository.existsBySymbolAndSource(symbol, "CONSOLIDATED");
 
         if (!consolidatedMarketDataExists) {
-            return false;
+            return new TransactionStatusDto(false, "No consolidated market data found.");
         }
 
         marketDataRepository.deleteBySymbolAndSource(symbol, "CONSOLIDATED");
 
-        return !marketDataRepository.existsBySymbolAndSource(symbol, "CONSOLIDATED");
+        boolean isConsolidatedMarketDataDeleted = !marketDataRepository.existsBySymbolAndSource(symbol, "CONSOLIDATED");
+        return new TransactionStatusDto(isConsolidatedMarketDataDeleted, isConsolidatedMarketDataDeleted ? "Consolidated market data deleted successfully." : "Failed to delete consolidated market data.");
     }
 
-    private boolean reConsolidateMarketData(String symbol) {
+    private TransactionStatusDto reConsolidateMarketData(String symbol) {
         List<MarketData> marketDataList = marketDataRepository.findAllBySymbolAndSourceIsNotInOrderByMarketTimestampDesc(symbol, Collections.singletonList("CONSOLIDATED"));
 
         if (marketDataList == null || marketDataList.isEmpty()) {
-            return false;
+            return new TransactionStatusDto(false, "No market data found.");
         }
 
         MarketData existingConsolidatedMarketData = marketDataRepository.findBySymbolAndSource(symbol, "CONSOLIDATED");
 
         if (existingConsolidatedMarketData == null) {
-            return false;
+            return new TransactionStatusDto(false, "No consolidated market data found.");
         }
 
         MarketData newConsolidatedMarketData = new MarketData();
@@ -468,8 +529,9 @@ public class MarketDataServiceImpl implements MarketDataService {
         marketDataRepository.save(newConsolidatedMarketData);
 
         MarketData savedConsolidatedMarketData = marketDataRepository.findBySymbolAndSource(symbol, "CONSOLIDATED");
+        boolean isMarketDataReConsolidated = savedConsolidatedMarketData != null;
 
-        return savedConsolidatedMarketData != null;
+        return new TransactionStatusDto(isMarketDataReConsolidated, isMarketDataReConsolidated ? "Market data re-consolidated successfully." : "Failed to re-consolidate market data.");
     }
 
     private double calculateAccruedInterest(Double lastTradedPrice, Double interestRate, LocalDate lastCouponDate) {

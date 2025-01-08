@@ -2,7 +2,6 @@ package com.scorpion.marketdata.core.broker;
 
 import com.scorpion.marketdata.api.dto.*;
 import com.scorpion.marketdata.core.dto.KafkaResponse;
-import com.scorpion.marketdata.core.dto.MarketDataResponseBody;
 import com.scorpion.marketdata.core.service.MarketDataService;
 import com.scorpion.marketdata.core.service.MarketDataServiceImpl;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -33,7 +32,7 @@ public class MarketDataCoreBroker {
         String correlationId = request.getCorrelationId();
         MarketDataRequestBody marketDataRequestBody = request.getMarketData();
 
-        KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.saveMarketData(marketDataRequestBody) ? "Update successful" : "Update failed");
+        KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.saveMarketData(marketDataRequestBody));
 
         log.warn("Received market data update request");
 
@@ -107,7 +106,7 @@ public class MarketDataCoreBroker {
         String symbol = request.getSymbol();
         String source = request.getSource();
 
-        KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.deleteMarketData(symbol, source) ? "Delete successful" : "Delete failed");
+        KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.deleteMarketData(symbol, source));
 
         log.warn("Received market data delete request");
 

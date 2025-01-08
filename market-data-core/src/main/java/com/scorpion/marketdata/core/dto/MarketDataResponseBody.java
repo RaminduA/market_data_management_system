@@ -1,14 +1,12 @@
 package com.scorpion.marketdata.core.dto;
 
-import java.time.LocalDate;
-
 public class MarketDataResponseBody {
     private final String symbol;
     private final Double lastTradedPrice;
     private final Double bidPrice;
     private final Double midPrice;
     private final Double askPrice;
-    private final Long marketTimestamp;
+    private final String marketTimestamp;
     private final String dependsOnSymbol;
     private final String source;
     private final String lastCouponDate;
@@ -17,7 +15,7 @@ public class MarketDataResponseBody {
     private final Double accruedInterest;
     private final Double theoreticalPrice;
 
-    public MarketDataResponseBody(String symbol, Double lastTradedPrice, Double bidPrice, Double midPrice, Double askPrice, Long marketTimestamp, String dependsOnSymbol, String source, String lastCouponDate, Double interestRate, Double volatility, Double accruedInterest, Double theoreticalPrice) {
+    public MarketDataResponseBody(String symbol, Double lastTradedPrice, Double bidPrice, Double midPrice, Double askPrice, String marketTimestamp, String dependsOnSymbol, String source, String lastCouponDate, Double interestRate, Double volatility, Double accruedInterest, Double theoreticalPrice) {
         this.symbol = symbol;
         this.lastTradedPrice = lastTradedPrice;
         this.bidPrice = bidPrice;
@@ -53,7 +51,7 @@ public class MarketDataResponseBody {
         return askPrice;
     }
 
-    public Long getMarketTimestamp() {
+    public String getMarketTimestamp() {
         return marketTimestamp;
     }
 
