@@ -5,6 +5,9 @@ import com.scorpion.marketdata.core.dto.MarketDataResponseBody;
 import com.scorpion.marketdata.core.dto.TransactionStatusDto;
 import com.scorpion.marketdata.core.entity.MarketData;
 import com.scorpion.marketdata.core.repository.*;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -28,6 +31,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     }
 
     @Override
+    @CachePut(value = "market_data", key = "#marketData.symbol + #marketData.source")
     public TransactionStatusDto saveMarketData(MarketDataRequestBody marketData) {
         if (marketData == null) {
             return new TransactionStatusDto(false, "Invalid market data.");
@@ -98,6 +102,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     }
 
     @Override
+    @Cacheable(value = "market_data", key = "#symbol + #source")
     public MarketDataResponseBody getMarketDataSpecific(String symbol, String source) {
         if (symbol == null  || source == null) {
             return null;
@@ -127,6 +132,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     }
 
     @Override
+    @Cacheable(value = "market_data", key = "#symbol + 'CONSOLIDATED'")
     public MarketDataResponseBody getMarketDataConsolidated(String symbol) {
         if (symbol == null) {
             return null;
@@ -156,6 +162,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     }
 
     @Override
+    @Cacheable(value = "market_data", key = "#symbols")
     public List<MarketDataResponseBody> getMarketDataBatch(List<String> symbols) {
         if (symbols == null) {
             return null;
@@ -197,6 +204,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     }
 
     @Override
+    @CacheEvict(value = "market_data", key = "#symbol + #source")
     public TransactionStatusDto deleteMarketData(String symbol, String source) {
         if (symbol == null || source == null) {
             return new TransactionStatusDto(false, "Invalid symbol or source.");

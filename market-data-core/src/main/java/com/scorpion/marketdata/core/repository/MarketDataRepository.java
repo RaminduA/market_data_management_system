@@ -2,9 +2,11 @@ package com.scorpion.marketdata.core.repository;
 
 import com.scorpion.marketdata.core.entity.MarketData;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public interface MarketDataRepository extends JpaRepository<MarketData, Long> {
     boolean existsBySymbolAndSource(String symbol, String source);
     boolean existsByDependsOnSymbol(String dependsOnSymbol);
