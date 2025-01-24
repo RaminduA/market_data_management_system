@@ -20,8 +20,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class MarketDataServiceImpl implements MarketDataService {
+    private static final Logger log = LoggerFactory.getLogger(MarketDataServiceImpl.class);
     private final PlatformTransactionManager transactionManager;
     private final MarketDataRepository marketDataRepository;
 
@@ -33,6 +37,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     @Override
 //    @CachePut(value = "save_market_data", key = "#marketData.symbol + #marketData.source")
     public TransactionStatusDto saveMarketData(MarketDataRequestBody marketData) {
+        log.info("Save request received by market data service: {}", marketData);
         if (marketData == null) {
             return new TransactionStatusDto(false, "Invalid market data.");
         }
@@ -104,6 +109,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     @Override
 //    @Cacheable(value = "get_market_data_specific", key = "#symbol + #source")
     public MarketDataResponseBody getMarketDataSpecific(String symbol, String source) {
+        log.info("Fetch market data specific for symbol {} and source {} received by service", symbol, source);
         if (symbol == null  || source == null) {
             return null;
         }
@@ -134,6 +140,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     @Override
 //    @Cacheable(value = "get_market_data_consolidated", key = "#symbol ")
     public MarketDataResponseBody getMarketDataConsolidated(String symbol) {
+        log.info("Fetch market data consolidated for symbol {} received by service", symbol);
         if (symbol == null) {
             return null;
         }
@@ -164,6 +171,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     @Override
 //    @Cacheable(value = "get_market_data_batch", key = "#symbols")
     public List<MarketDataResponseBody> getMarketDataBatch(List<String> symbols) {
+        log.info("Fetch market data batch for symbols {} received by service", symbols);
         if (symbols == null) {
             return null;
         }
@@ -206,6 +214,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     @Override
 //    @CacheEvict(value = "delete_market_data", key = "#symbol + #source")
     public TransactionStatusDto deleteMarketData(String symbol, String source) {
+        log.info("Delete market data for symbol {} and source {} received by service", symbol, source);
         if (symbol == null || source == null) {
             return new TransactionStatusDto(false, "Invalid symbol or source.");
         }

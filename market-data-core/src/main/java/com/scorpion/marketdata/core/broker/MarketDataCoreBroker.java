@@ -34,7 +34,7 @@ public class MarketDataCoreBroker {
 
         KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.saveMarketData(marketDataRequestBody));
 
-        log.warn("Received market data update request");
+        log.info("Received market data update request");
 
         Message<KafkaResponse> message = MessageBuilder
                 .withPayload(kafkaResponse)
@@ -42,7 +42,7 @@ public class MarketDataCoreBroker {
                 .build();
 
         kafkaTemplate.send(message);
-        log.warn("Processing market data update response");
+        log.info("Processing market data update response");
     }
 
     @KafkaListener(topics = "market-data-query-specific", groupId = "market-data-core")
@@ -53,7 +53,7 @@ public class MarketDataCoreBroker {
 
         KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.getMarketDataSpecific(symbol, source));
 
-        log.warn("Received market data query specific request");
+        log.info("Received market data query specific request");
 
         Message<KafkaResponse> message = MessageBuilder
                 .withPayload(kafkaResponse)
@@ -61,7 +61,7 @@ public class MarketDataCoreBroker {
                 .build();
 
         kafkaTemplate.send(message);
-        log.warn("Processing market data query specific response");
+        log.info("Processing market data query specific response");
     }
 
     @KafkaListener(topics = "market-data-query-consolidated", groupId = "market-data-core")
@@ -71,7 +71,7 @@ public class MarketDataCoreBroker {
 
         KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.getMarketDataConsolidated(symbol));
 
-        log.warn("Received market data query consolidated request");
+        log.info("Received market data query consolidated request");
 
         Message<KafkaResponse> message = MessageBuilder
                 .withPayload(kafkaResponse)
@@ -79,7 +79,7 @@ public class MarketDataCoreBroker {
                 .build();
 
         kafkaTemplate.send(message);
-        log.warn("Processing market data query consolidated response");
+        log.info("Processing market data query consolidated response");
     }
 
     @KafkaListener(topics = "market-data-query-consolidated-batch", groupId = "market-data-core")
@@ -89,7 +89,7 @@ public class MarketDataCoreBroker {
 
         KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.getMarketDataBatch(symbols));
 
-        log.warn("Received market data query consolidated batch request");
+        log.info("Received market data query consolidated batch request");
 
         Message<KafkaResponse> message = MessageBuilder
                 .withPayload(kafkaResponse)
@@ -97,7 +97,7 @@ public class MarketDataCoreBroker {
                 .build();
 
         kafkaTemplate.send(message);
-        log.warn("Processing market data query consolidated batch response");
+        log.info("Processing market data query consolidated batch response");
     }
 
     @KafkaListener(topics = "market-data-delete", groupId = "market-data-core")
@@ -108,7 +108,7 @@ public class MarketDataCoreBroker {
 
         KafkaResponse kafkaResponse = new KafkaResponse(correlationId, marketDataService.deleteMarketData(symbol, source));
 
-        log.warn("Received market data delete request");
+        log.info("Received market data delete request");
 
         Message<KafkaResponse> message = MessageBuilder
                 .withPayload(kafkaResponse)
@@ -116,6 +116,6 @@ public class MarketDataCoreBroker {
                 .build();
 
         kafkaTemplate.send(message);
-        log.warn("Processing market data delete response");
+        log.info("Processing market data delete response");
     }
 }

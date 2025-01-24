@@ -32,10 +32,13 @@ public class MarketDataController {
     })
     public ResponseEntity<Object> saveMarketData(@RequestBody MarketDataRequestBody request) {
         ResponseEntity<Object> response = marketDataApiBroker.saveMarketData(request);
+        log.info("Save request received by controller: {}", request);
 
         if (response != null) {
+            log.info("Save response sent from controller: {}", response);
             return response;
         } else {
+            log.error("Bad Save request in controller.");
             return ResponseEntity.badRequest().body("Bad HTTP request.");
         }
     }
@@ -49,10 +52,13 @@ public class MarketDataController {
     })
     public ResponseEntity<Object> getMarketDataSpecific(@RequestParam String symbol, @RequestParam String source) {
         ResponseEntity<Object> response = marketDataApiBroker.getMarketDataSpecific(symbol, source);
+        log.info("Fetch specific request received by controller: {}, {}", symbol, response);
 
         if (response != null) {
+            log.info("Fetch specific response sent from controller: {}", response);
             return response;
         } else {
+            log.error("Bad Specific Fetch request in controller.");
             return ResponseEntity.badRequest().body("Bad HTTP request.");
         }
     }
@@ -67,10 +73,13 @@ public class MarketDataController {
     })
     public ResponseEntity<Object> getMarketDataConsolidated(@PathVariable String symbol) {
         ResponseEntity<Object> response = marketDataApiBroker.getMarketDataConsolidated(symbol);
+        log.info("Fetch consolidated request received by controller: {}", symbol);
 
         if (response != null) {
+            log.info("Fetch consolidated response sent from controller: {}", response);
             return response;
         } else {
+            log.error("Bad Consolidated Fetch request in controller.");
             return ResponseEntity.badRequest().body("Bad HTTP request.");
         }
     }
@@ -85,10 +94,13 @@ public class MarketDataController {
     })
     public ResponseEntity<Object> getMarketDataBatch(@RequestBody List<String> request) {
         ResponseEntity<Object> response = marketDataApiBroker.getMarketDataBatch(request);
+        log.info("Fetch a batch of request received by controller: {}", request);
 
         if (response != null) {
+            log.info("Fetch a batch of response sent from controller: {}", response);
             return response;
         } else {
+            log.error("Bad Batch Fetch request in controller.");
             return ResponseEntity.badRequest().body("Bad HTTP request.");
         }
     }
@@ -102,10 +114,13 @@ public class MarketDataController {
     })
     public ResponseEntity<Object> deleteMarketData(@PathVariable String symbol, @PathVariable String source) {
         ResponseEntity<Object> response = marketDataApiBroker.deleteMarketData(symbol, source);
+        log.info("Delete request received by controller: {}, {}", symbol, response);
 
         if (response != null) {
+            log.info("Delete response sent from controller: {}", response);
             return response;
         } else {
+            log.error("Bad Delete request in controller.");
             return ResponseEntity.badRequest().body("Bad HTTP request.");
         }
     }
