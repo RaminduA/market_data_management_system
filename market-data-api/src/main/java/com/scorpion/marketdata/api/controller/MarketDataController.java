@@ -41,12 +41,12 @@ public class MarketDataController {
     }
 
     @GetMapping("/source")
-//    @Operation(summary = "Fetch market data for given a symbol and a source")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "Market data successfully fetched."),
-//            @ApiResponse(responseCode = "400", description = "The request is invalid. Try again."),
-//            @ApiResponse(responseCode = "404", description = "Market data not found.")
-//    })
+    @Operation(summary = "Fetch market data for given a symbol and a source")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Market data successfully fetched."),
+            @ApiResponse(responseCode = "400", description = "The request is invalid. Try again."),
+            @ApiResponse(responseCode = "404", description = "Market data not found.")
+    })
     public ResponseEntity<Object> getMarketDataSpecific(@RequestParam String symbol, @RequestParam String source) {
         ResponseEntity<Object> response = marketDataApiBroker.getMarketDataSpecific(symbol, source);
 
@@ -58,13 +58,13 @@ public class MarketDataController {
     }
 
     @GetMapping("/consolidated/{symbol}")
-//    @Operation(summary = "Fetch consolidated market data for a given symbol")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "Consolidated market data successfully fetched."),
-//            @ApiResponse(responseCode = "400", description = "The request is invalid. Try again."),
-//            @ApiResponse(responseCode = "404", description = "Market data not found."),
-//            @ApiResponse(responseCode = "500", description = "Something wrong with Kafka.")
-//    })
+    @Operation(summary = "Fetch consolidated market data for a given symbol")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Consolidated market data successfully fetched."),
+            @ApiResponse(responseCode = "400", description = "The request is invalid. Try again."),
+            @ApiResponse(responseCode = "404", description = "Market data not found."),
+            @ApiResponse(responseCode = "500", description = "Something wrong with Kafka.")
+    })
     public ResponseEntity<Object> getMarketDataConsolidated(@PathVariable String symbol) {
         ResponseEntity<Object> response = marketDataApiBroker.getMarketDataConsolidated(symbol);
 
@@ -76,13 +76,13 @@ public class MarketDataController {
     }
 
     @GetMapping("/batch")
-//    @Operation(summary = "Fetch a batch of consolidated market data for a given list of symbols")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "Consolidated market data batch successfully fetched."),
-//            @ApiResponse(responseCode = "400", description = "The request is invalid. Try again."),
-//            @ApiResponse(responseCode = "404", description = "Market data not found."),
-//            @ApiResponse(responseCode = "500", description = "Something wrong with Kafka.")
-//    })
+    @Operation(summary = "Fetch a batch of consolidated market data for a given list of symbols")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Consolidated market data batch successfully fetched."),
+            @ApiResponse(responseCode = "400", description = "The request is invalid. Try again."),
+            @ApiResponse(responseCode = "404", description = "Market data not found."),
+            @ApiResponse(responseCode = "500", description = "Something wrong with Kafka.")
+    })
     public ResponseEntity<Object> getMarketDataBatch(@RequestBody List<String> request) {
         ResponseEntity<Object> response = marketDataApiBroker.getMarketDataBatch(request);
 
@@ -94,12 +94,12 @@ public class MarketDataController {
     }
 
     @DeleteMapping("/{symbol}/{source}")
-//    @Operation(summary = "Delete market data for given a symbol and a source")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "202", description = "Market data deleted successfully."),
-//            @ApiResponse(responseCode = "400", description = "The request is invalid. Try again."),
-//            @ApiResponse(responseCode = "500", description = "Something wrong with Kafka.")
-//    })
+    @Operation(summary = "Delete market data for given a symbol and a source")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Market data deleted successfully."),
+            @ApiResponse(responseCode = "400", description = "The request is invalid. Try again."),
+            @ApiResponse(responseCode = "500", description = "Something wrong with Kafka.")
+    })
     public ResponseEntity<Object> deleteMarketData(@PathVariable String symbol, @PathVariable String source) {
         ResponseEntity<Object> response = marketDataApiBroker.deleteMarketData(symbol, source);
 
