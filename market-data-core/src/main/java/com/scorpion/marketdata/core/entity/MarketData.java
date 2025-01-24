@@ -2,11 +2,12 @@ package com.scorpion.marketdata.core.entity;
 
 import jakarta.persistence.*;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "market_data")
-public class MarketData {
+public class MarketData{
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;

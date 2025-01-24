@@ -1,6 +1,8 @@
 package com.scorpion.marketdata.core.dto;
 
-public class KafkaResponse {
+import java.io.Serializable;
+
+public class KafkaResponse implements Serializable {
     private String correlationId;
     private Object data;
 

@@ -14,7 +14,8 @@ import java.util.Map;
 @Configuration
 public class KafkaProducerConfig {
     public Map<String, Object> producerConfigs() {
-        String bootstrapServers = "localhost:9092";
+//        String bootstrapServers = "localhost:9092";
+        String bootstrapServers = "kafka:9092";
         return Map.of(
                 ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers,
                 ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,

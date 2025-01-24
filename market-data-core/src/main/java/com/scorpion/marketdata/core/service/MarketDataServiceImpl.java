@@ -31,7 +31,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     }
 
     @Override
-    @CachePut(value = "market_data", key = "#marketData.symbol + #marketData.source")
+//    @CachePut(value = "save_market_data", key = "#marketData.symbol + #marketData.source")
     public TransactionStatusDto saveMarketData(MarketDataRequestBody marketData) {
         if (marketData == null) {
             return new TransactionStatusDto(false, "Invalid market data.");
@@ -102,7 +102,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     }
 
     @Override
-    @Cacheable(value = "market_data", key = "#symbol + #source")
+//    @Cacheable(value = "get_market_data_specific", key = "#symbol + #source")
     public MarketDataResponseBody getMarketDataSpecific(String symbol, String source) {
         if (symbol == null  || source == null) {
             return null;
@@ -132,7 +132,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     }
 
     @Override
-    @Cacheable(value = "market_data", key = "#symbol + 'CONSOLIDATED'")
+//    @Cacheable(value = "get_market_data_consolidated", key = "#symbol ")
     public MarketDataResponseBody getMarketDataConsolidated(String symbol) {
         if (symbol == null) {
             return null;
@@ -162,7 +162,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     }
 
     @Override
-    @Cacheable(value = "market_data", key = "#symbols")
+//    @Cacheable(value = "get_market_data_batch", key = "#symbols")
     public List<MarketDataResponseBody> getMarketDataBatch(List<String> symbols) {
         if (symbols == null) {
             return null;
@@ -204,7 +204,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     }
 
     @Override
-    @CacheEvict(value = "market_data", key = "#symbol + #source")
+//    @CacheEvict(value = "delete_market_data", key = "#symbol + #source")
     public TransactionStatusDto deleteMarketData(String symbol, String source) {
         if (symbol == null || source == null) {
             return new TransactionStatusDto(false, "Invalid symbol or source.");
